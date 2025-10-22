@@ -1,30 +1,18 @@
-Campuslands.SupportDashboard/
-│
-├── Data/
-│ └── tickets.json # Datos mock de tickets
-│
-├── Models/
-│ └── Ticket.cs # Modelo principal del ticket
-│
-├── Pages/
-│ └── Tickets.razor # Página principal de gestión de tickets
-│
-├── Services/
-│ └── TicketService.cs # Servicio encargado del consumo HTTP simulado
-│
-├── Shared/
-│ ├── MainLayout.razor # Layout principal tipo dashboard
-│ └── NavMenu.razor # Barra lateral de navegación
-│
-├── wwwroot/
-│ ├── css/ # Archivos de estilo (Bootstrap)
-│ ├── js/ # Plugins y scripts
-│ └── index.html
-│
-└── Program.cs # Configuración de servicios e inyección de dependencias
+# 🧭 Campuslands Support Dashboard
 
+**Proyecto desarrollado como prueba técnica Blazor – Campuslands (Octubre 2025).**  
+El objetivo es construir un **mini dashboard administrativo** que permite listar, filtrar y gestionar **tickets de soporte** mediante una API simulada.  
+Se enfoca en **buenas prácticas**, **estructura limpia**, **diseño moderno** y **uso correcto de Blazor Server** con asincronía y servicios inyectados.
 
 ---
+
+## 🚀 Características principales
+
+- 📋 **Listado de tickets:** muestra todos los tickets registrados en el sistema.  
+- 🔍 **Filtrado dinámico:** permite filtrar por estado (`Abierto`, `En progreso`, `Cerrado`) sin recargar toda la lista.  
+- 👁️ **Detalle del ticket:** muestra la información completa al seleccionarlo.  
+- 🔄 **Cambio de estado:** permite actualizar el estado del ticket mediante un `PATCH` simulado.  
+- ⚙️ **Interfaz moderna y responsiva:** implementada con **Bootstrap 5** y **Bootstrap Table**.  
 
 ## 🧩 Tecnologías utilizadas
 
