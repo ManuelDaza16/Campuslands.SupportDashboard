@@ -1,10 +1,13 @@
 using Campuslands.SupportDashboard.Components;
+using Campuslands.SupportDashboard.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddScoped<TicketService>();
 
 var app = builder.Build();
 
