@@ -7,6 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Registrar IHttpClientFactory y el servicio de tickets (scoped)
+builder.Services.AddHttpClient();
 builder.Services.AddScoped<TicketService>();
 
 var app = builder.Build();

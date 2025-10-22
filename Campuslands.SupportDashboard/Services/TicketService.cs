@@ -1,4 +1,8 @@
-﻿using Campuslands.SupportDashboard.Models;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Linq;
+using Microsoft.AspNetCore.Components;
+using Campuslands.SupportDashboard.Models;
 
 namespace Campuslands.SupportDashboard.Services
 {
@@ -6,9 +10,13 @@ namespace Campuslands.SupportDashboard.Services
     {
         private readonly HttpClient _httpClient;
 
-        public TicketService(HttpClient httpClient)
+        public TicketService(IHttpClientFactory httpClientFactory, NavigationManager navigationManager)
         {
-            _httpClient = httpClient;
+            _httpClient = httpClientFactory.CreateClient();
+            if (_httpClient.BaseAddress is null)
+            {
+                _httpClient.BaseAddress = new Uri(navigationManager.BaseUri);
+            }
         }
 
         public async Task<List<Ticket>> GetTicketsAsync()
@@ -30,3 +38,4 @@ namespace Campuslands.SupportDashboard.Services
         }
     }
 }
+
