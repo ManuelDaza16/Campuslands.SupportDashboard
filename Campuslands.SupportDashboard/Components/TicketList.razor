@@ -1,59 +1,50 @@
-﻿@using Campuslands.SupportDashboard.Models
+@using Campuslands.SupportDashboard.Models
 
-<table id="tbTickets"
-       class="table table-striped"
-       data-toggle="table"
-       data-pagination="true"
-       data-search="true"
-       data-filter-control="true"
-       data-page-size="5">
-    <thead class="table-dark">
-        <tr>
-            <th data-field="id" data-sortable="true">#</th>
-            <th data-field="title" data-sortable="true">Título</th>
-            <th data-field="status" data-filter-control="select" data-sortable="true">Estado</th>
-            <th data-field="createdAt" data-sortable="true">Fecha</th>
-            <th data-field="actions">Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (Tickets != null && Tickets.Count > 0)
-        {
-            foreach (var ticket in Tickets)
+<div class="table-responsive">
+    <table class="table align-middle mb-0">
+        <thead>
+            <tr>
+                <th style="width: 60%">Título</th>
+                <th style="width: 40%">Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Tickets is not null && Tickets.Count > 0)
+            {
+                foreach (var ticket in Tickets)
+                {
+                    var isActive = SelectedTicketId.HasValue && SelectedTicketId == ticket.Id;
+                    <tr role="button" class="@("table-row" + (isActive ? " table-active" : string.Empty))" @onclick="() => OnSelect.InvokeAsync(ticket)">
+                        <td class="fw-semibold">@ticket.Title</td>
+                        <td>
+                            <span class="badge rounded-pill @GetStatusBadge(ticket.Status)">@ticket.Status</span>
+                        </td>
+                    </tr>
+                }
+            }
+            else
             {
                 <tr>
-                    <td>@ticket.Id</td>
-                    <td>@ticket.Title</td>
-                    <td>
-                        <span class="badge bg-@GetStatusColor(ticket.Status)">
-                            @ticket.Status
-                        </span>
-                    </td>
-                    <td>@ticket.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
-                    <td>
-                        <button class="btn btn-outline-primary btn-sm" @onclick="() => OnSelect.InvokeAsync(ticket)">
-                            <i class="bi bi-eye"></i> Ver
-                        </button>
-                    </td>
+                    <td colspan="2" class="text-center text-muted py-4">No hay tickets disponibles.</td>
                 </tr>
             }
-        }
-        else
-        {
-            <tr><td colspan="5" class="text-center">No hay tickets disponibles.</td></tr>
-        }
-    </tbody>
-</table>
+        </tbody>
+    </table>
+    <div class="small text-muted mt-2">@Tickets?.Count ticket(s)</div>
+    
+</div>
 
 @code {
     [Parameter] public List<Ticket> Tickets { get; set; } = new();
     [Parameter] public EventCallback<Ticket> OnSelect { get; set; }
+    [Parameter] public int? SelectedTicketId { get; set; }
 
-    private string GetStatusColor(string status) => status switch
+    private string GetStatusBadge(string status) => status switch
     {
-        "Abierto" => "danger",
-        "En progreso" => "warning",
-        "Cerrado" => "success",
-        _ => "secondary"
+        // Use bg-* for wider Bootstrap compatibility
+        "Abierto" => "bg-primary",
+        "En progreso" => "bg-warning text-dark",
+        "Cerrado" => "bg-success",
+        _ => "text-bg-secondary"
     };
 }

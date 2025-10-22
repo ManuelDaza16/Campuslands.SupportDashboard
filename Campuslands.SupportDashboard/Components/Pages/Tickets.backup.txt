@@ -1,0 +1,62 @@
+﻿@page "/tickets"
+@rendermode InteractiveServer
+@inject Campuslands.SupportDashboard.Services.TicketService TicketService
+@using Campuslands.SupportDashboard.Models
+@using Campuslands.SupportDashboard.Components
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="bi bi-life-preserver me-2"></i>Tickets de Soporte</h4>
+            <select class="form-select form-select-sm w-auto" @onchange="FilterByStatus">
+                <option value="">Todos</option>
+                <option>Abierto</option>
+                <option>En progreso</option>
+                <option>Cerrado</option>
+            </select>
+        </div>
+        <div class="card-body">
+            <TicketList Tickets="filteredTickets" OnSelect="SelectTicket" />
+        </div>
+    </div>
+
+    <TicketDetail Ticket="selectedTicket"
+                  OnStatusChange="HandleStatusChange"
+                  OnClose="CloseModal" />
+</div>
+
+@code {
+    private List<Ticket> tickets = new();
+    private List<Ticket> filteredTickets = new();
+    private Ticket? selectedTicket;
+
+    protected override async Task OnInitializedAsync()
+    {
+        tickets = await TicketService.GetTicketsAsync();
+        filteredTickets = tickets;
+    }
+
+    private void FilterByStatus(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        filteredTickets = string.IsNullOrEmpty(value)
+            ? tickets
+            : tickets.Where(t => t.Status.Equals(value, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    private void SelectTicket(Ticket ticket)
+    {
+        selectedTicket = ticket;
+    }
+
+    private async Task HandleStatusChange(string newStatus)
+    {
+        if (selectedTicket != null)
+        {
+            await TicketService.UpdateStatusAsync(selectedTicket.Id, newStatus);
+            selectedTicket.Status = newStatus;
+        }
+    }
+
+    private void CloseModal() => selectedTicket = null;
+}

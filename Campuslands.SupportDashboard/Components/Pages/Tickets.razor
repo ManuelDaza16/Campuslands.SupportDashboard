@@ -1,47 +1,81 @@
-﻿@page "/tickets"
+@page "/tickets"
+@page "/"
 @rendermode InteractiveServer
 @inject Campuslands.SupportDashboard.Services.TicketService TicketService
 @using Campuslands.SupportDashboard.Models
 @using Campuslands.SupportDashboard.Components
 
 <div class="container-fluid py-4">
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-            <h4 class="mb-0"><i class="bi bi-life-preserver me-2"></i>Tickets de Soporte</h4>
-            <select class="form-select form-select-sm w-auto" @onchange="FilterByStatus">
-                <option value="">Todos</option>
-                <option>Abierto</option>
-                <option>En progreso</option>
-                <option>Cerrado</option>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Tickets</h3>
+        <div class="d-flex gap-2">
+            <select class="form-select form-select-sm" style="min-width: 180px" @onchange="OnStatusFilterChanged" value="@selectedStatus">
+                <option value="">All statuses</option>
+                <option value="Abierto">Abierto</option>
+                <option value="En progreso">En progreso</option>
+                <option value="Cerrado">Cerrado</option>
             </select>
-        </div>
-        <div class="card-body">
-            <TicketList Tickets="filteredTickets" OnSelect="SelectTicket" />
+            <div class="input-group input-group-sm" style="min-width: 220px">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input class="form-control" placeholder="Search..." @oninput="OnSearchChanged" value="@searchText" />
+            </div>
         </div>
     </div>
 
-    <TicketDetail Ticket="selectedTicket"
-                  OnStatusChange="HandleStatusChange"
-                  OnClose="CloseModal" />
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-12 col-lg-7">
+                    <TicketList Tickets="filteredTickets" OnSelect="SelectTicket" SelectedTicketId="@selectedTicket?.Id" />
+                </div>
+                <div class="col-12 col-lg-5">
+                    <TicketDetail Ticket="selectedTicket"
+                                  OnStatusChange="HandleStatusChange" />
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @code {
     private List<Ticket> tickets = new();
     private List<Ticket> filteredTickets = new();
     private Ticket? selectedTicket;
+    private string selectedStatus = string.Empty;
+    private string searchText = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         tickets = await TicketService.GetTicketsAsync();
-        filteredTickets = tickets;
+        ApplyFilters();
+        selectedTicket = tickets.FirstOrDefault();
     }
 
-    private void FilterByStatus(ChangeEventArgs e)
+    private void OnStatusFilterChanged(ChangeEventArgs e)
     {
-        var value = e.Value?.ToString() ?? "";
-        filteredTickets = string.IsNullOrEmpty(value)
-            ? tickets
-            : tickets.Where(t => t.Status.Equals(value, StringComparison.OrdinalIgnoreCase)).ToList();
+        selectedStatus = e.Value?.ToString() ?? string.Empty;
+        ApplyFilters();
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchText = e.Value?.ToString() ?? string.Empty;
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<Ticket> query = tickets;
+        if (!string.IsNullOrWhiteSpace(selectedStatus))
+        {
+            query = query.Where(t => t.Status.Equals(selectedStatus, StringComparison.OrdinalIgnoreCase));
+        }
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            query = query.Where(t => t.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+        }
+        filteredTickets = query.OrderByDescending(t => t.CreatedAt).ToList();
+        StateHasChanged();
     }
 
     private void SelectTicket(Ticket ticket)
@@ -51,12 +85,12 @@
 
     private async Task HandleStatusChange(string newStatus)
     {
-        if (selectedTicket != null)
-        {
-            await TicketService.UpdateStatusAsync(selectedTicket.Id, newStatus);
-            selectedTicket.Status = newStatus;
-        }
+        if (selectedTicket is null) return;
+        await TicketService.UpdateStatusAsync(selectedTicket.Id, newStatus);
+        selectedTicket.Status = newStatus;
+        // Keep data coherent in list
+        var item = tickets.FirstOrDefault(t => t.Id == selectedTicket.Id);
+        if (item is not null) item.Status = newStatus;
+        ApplyFilters();
     }
-
-    private void CloseModal() => selectedTicket = null;
 }
