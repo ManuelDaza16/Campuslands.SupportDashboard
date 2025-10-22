@@ -1,0 +1,59 @@
+﻿@using Campuslands.SupportDashboard.Models
+
+<table id="tbTickets"
+       class="table table-striped"
+       data-toggle="table"
+       data-pagination="true"
+       data-search="true"
+       data-filter-control="true"
+       data-page-size="5">
+    <thead class="table-dark">
+        <tr>
+            <th data-field="id" data-sortable="true">#</th>
+            <th data-field="title" data-sortable="true">Título</th>
+            <th data-field="status" data-filter-control="select" data-sortable="true">Estado</th>
+            <th data-field="createdAt" data-sortable="true">Fecha</th>
+            <th data-field="actions">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Tickets != null && Tickets.Count > 0)
+        {
+            foreach (var ticket in Tickets)
+            {
+                <tr>
+                    <td>@ticket.Id</td>
+                    <td>@ticket.Title</td>
+                    <td>
+                        <span class="badge bg-@GetStatusColor(ticket.Status)">
+                            @ticket.Status
+                        </span>
+                    </td>
+                    <td>@ticket.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>
+                        <button class="btn btn-outline-primary btn-sm" @onclick="() => OnSelect.InvokeAsync(ticket)">
+                            <i class="bi bi-eye"></i> Ver
+                        </button>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr><td colspan="5" class="text-center">No hay tickets disponibles.</td></tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter] public List<Ticket> Tickets { get; set; } = new();
+    [Parameter] public EventCallback<Ticket> OnSelect { get; set; }
+
+    private string GetStatusColor(string status) => status switch
+    {
+        "Abierto" => "danger",
+        "En progreso" => "warning",
+        "Cerrado" => "success",
+        _ => "secondary"
+    };
+}

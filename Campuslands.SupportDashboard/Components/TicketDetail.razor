@@ -1,0 +1,58 @@
+﻿@using Campuslands.SupportDashboard.Models
+
+@if (Ticket != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">Detalle del Ticket</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="OnClose"></button>
+                </div>
+                <div class="modal-body">
+                    <h5>@Ticket.Title</h5>
+                    <p>@Ticket.Description</p>
+                    <p>
+                        <b>Estado actual:</b>
+                        <span class="badge bg-@GetStatusColor(Ticket.Status)">
+                            @Ticket.Status
+                        </span>
+                    </p>
+                    <label><b>Cambiar estado:</b></label>
+                    <select class="form-select" @onchange="ChangeStatus">
+                        <option value="">Seleccionar...</option>
+                        <option>Abierto</option>
+                        <option>En progreso</option>
+                        <option>Cerrado</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="OnClose">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Ticket? Ticket { get; set; }
+    [Parameter] public EventCallback<string> OnStatusChange { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private async Task ChangeStatus(ChangeEventArgs e)
+    {
+        var newStatus = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(newStatus))
+        {
+            await OnStatusChange.InvokeAsync(newStatus);
+        }
+    }
+
+    private string GetStatusColor(string status) => status switch
+    {
+        "Abierto" => "danger",
+        "En progreso" => "warning",
+        "Cerrado" => "success",
+        _ => "secondary"
+    };
+}

@@ -1,132 +1,40 @@
 ﻿@page "/tickets"
 @rendermode InteractiveServer
 @inject Campuslands.SupportDashboard.Services.TicketService TicketService
+@using Campuslands.SupportDashboard.Models
+@using Campuslands.SupportDashboard.Components
 
 <div class="container-fluid py-4">
     <div class="card shadow-sm border-0">
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
             <h4 class="mb-0"><i class="bi bi-life-preserver me-2"></i>Tickets de Soporte</h4>
-            <div>
-                <button class="btn btn-outline-light btn-sm me-2" @onclick="ReloadTickets">
-                    <i class="bi bi-arrow-repeat"></i> Recargar
-                </button>
-                <select class="form-select form-select-sm d-inline-block w-auto" @onchange="FilterByStatus">
-                    <option value="">Todos</option>
-                    <option>Abierto</option>
-                    <option>En progreso</option>
-                    <option>Cerrado</option>
-                </select>
-            </div>
+            <select class="form-select form-select-sm w-auto" @onchange="FilterByStatus">
+                <option value="">Todos</option>
+                <option>Abierto</option>
+                <option>En progreso</option>
+                <option>Cerrado</option>
+            </select>
         </div>
-
         <div class="card-body">
-            <table id="tbTickets"
-                   class="table table-striped"
-                   data-toggle="table"
-                   data-pagination="true"
-                   data-search="true"
-                   data-filter-control="true"
-                   data-page-size="5">
-                <thead class="table-dark">
-                    <tr>
-                        <th data-field="id" data-sortable="true">#</th>
-                        <th data-field="title" data-sortable="true">Título</th>
-                        <th data-field="status" data-filter-control="select" data-sortable="true">Estado</th>
-                        <th data-field="createdAt" data-sortable="true">Fecha</th>
-                        <th data-field="actions" data-formatter="actionFormatter">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (filteredTickets != null && filteredTickets.Count > 0)
-                    {
-                        foreach (var ticket in filteredTickets)
-                        {
-                            <tr>
-                                <td>@ticket.Id</td>
-                                <td>@ticket.Title</td>
-                                <td>
-                                    <span class="badge bg-@GetStatusColor(ticket.Status)">
-                                        @ticket.Status
-                                    </span>
-                                </td>
-                                <td>@ticket.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
-                                <td>
-                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => SelectTicket(ticket)">
-                                        <i class="bi bi-eye"></i> Ver
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="5" class="text-center">No hay tickets disponibles.</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+            <TicketList Tickets="filteredTickets" OnSelect="SelectTicket" />
         </div>
     </div>
 
-    @if (selectedTicket != null)
-    {
-        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-0 shadow">
-                    <div class="modal-header bg-dark text-white">
-                        <h5 class="modal-title">Detalle del Ticket</h5>
-                        <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <h5>@selectedTicket.Title</h5>
-                        <p>@selectedTicket.Description</p>
-                        <p>
-                            <b>Estado:</b>
-                            <span class="badge bg-@GetStatusColor(selectedTicket.Status)">
-                                @selectedTicket.Status
-                            </span>
-                        </p>
-                        <label><b>Cambiar estado:</b></label>
-                        <select class="form-select" @onchange="ChangeStatus">
-                            <option value="">Seleccionar...</option>
-                            <option>Abierto</option>
-                            <option>En progreso</option>
-                            <option>Cerrado</option>
-                        </select>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" @onclick="CloseModal">Cerrar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
+    <TicketDetail Ticket="selectedTicket"
+                  OnStatusChange="HandleStatusChange"
+                  OnClose="CloseModal" />
 </div>
 
 @code {
-    private List<Campuslands.SupportDashboard.Models.Ticket> tickets = new();
-    private List<Campuslands.SupportDashboard.Models.Ticket> filteredTickets = new();
-    private Campuslands.SupportDashboard.Models.Ticket? selectedTicket;
+    private List<Ticket> tickets = new();
+    private List<Ticket> filteredTickets = new();
+    private Ticket? selectedTicket;
 
     protected override async Task OnInitializedAsync()
-    {
-        await LoadTickets();
-    }
-
-    private async Task LoadTickets()
     {
         tickets = await TicketService.GetTicketsAsync();
         filteredTickets = tickets;
     }
-
-    private string GetStatusColor(string status) => status switch
-    {
-        "Abierto" => "danger",
-        "En progreso" => "warning",
-        "Cerrado" => "success",
-        _ => "secondary"
-    };
 
     private void FilterByStatus(ChangeEventArgs e)
     {
@@ -136,28 +44,19 @@
             : tickets.Where(t => t.Status.Equals(value, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 
-    private void SelectTicket(Campuslands.SupportDashboard.Models.Ticket ticket)
+    private void SelectTicket(Ticket ticket)
     {
         selectedTicket = ticket;
     }
 
-    private async Task ChangeStatus(ChangeEventArgs e)
+    private async Task HandleStatusChange(string newStatus)
     {
-        var newStatus = e.Value?.ToString();
-        if (selectedTicket != null && !string.IsNullOrEmpty(newStatus))
+        if (selectedTicket != null)
         {
             await TicketService.UpdateStatusAsync(selectedTicket.Id, newStatus);
             selectedTicket.Status = newStatus;
         }
     }
 
-    private void CloseModal()
-    {
-        selectedTicket = null;
-    }
-
-    private async Task ReloadTickets()
-    {
-        await LoadTickets();
-    }
+    private void CloseModal() => selectedTicket = null;
 }
